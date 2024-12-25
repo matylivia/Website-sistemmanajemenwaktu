@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manajemen Waktu Mahasiswa</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #ffe4e1;
+            font-family: Arial, sans-serif;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #ff69b4;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #ff1493;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: #ff69b4;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #ff1493;
+        }
+
+        .menu button {
+            margin: 5px 0;
+            width: 48%;
+        }
+
+        .menu {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #alarm-control {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        #alarm-control button {
+            width: auto;
+            padding: 10px 20px;
+            background-color: #ff4500;
+        }
+
+        #alarm-control button:hover {
+            background-color: #ff6347;
+        }
+
+        #history {
+            margin-top: 30px;
+        }
+
+        #history ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        #history li {
+            background-color: #f0f0f0;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #history li button {
+            background-color: #ff6347;
+            color: white;
+            border: none;
+            cursor: pointer;
+            padding: 5px 10px;
+        }
+
+        #history li button:hover {
+            background-color: #ff4500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Manajemen Waktu Mahasiswa</h1>
+        <div id="form-section">
+            <form id="registration-form">
+                <h2>Registrasi</h2>
+                <label for="nama">Nama:</label>
+                <input type="text" id="nama" name="nama" required>
+
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+
+                <button type="button" onclick="registerUser()">Registrasi</button>
+            </form>
+
+            <form id="login-form" style="display: none;">
+                <h2>Login</h2>
+                <label for="login-email">Email:</label>
+                <input type="email" id="login-email" name="email" required>
+
+                <label for="login-password">Password:</label>
+                <input type="password" id="login-password" name="password" required>
+
+                <button type="button" onclick="loginUser()">Login</button>
+            </form>
+
+            <div id="main-menu" style="display: none;">
+                <h2>Menu Utama</h2>
+                <div class="menu">
+                    <button onclick="showAddScheduleForm()">Tambah Jadwal</button>
+                    <button onclick="showAddTaskForm()">Tambah Tugas</button>
+                </div>
+            </div>
+        </div>
+
+        <form id="add-schedule-form" style="display: none;">
+            <h2>Tambah Jadwal</h2>
+            <label for="tanggal">Tanggal:</label>
+            <input type="date" id="tanggal" name="tanggal" required>
+
+            <label for="waktu">Waktu:</label>
+            <input type="time" id="waktu" name="waktu" required>
+
+            <label for="deskripsi">Deskripsi:</label>
+            <input type="text" id="deskripsi" name="deskripsi">
+
+            <button type="button" onclick="addSchedule()">Simpan Jadwal</button>
+        </form>
+
+        <form id="add-task-form" style="display: none;">
+            <h2>Tambah Tugas</h2>
+            <label for="judul-tugas">Judul Tugas:</label>
+            <input type="text" id="judul-tugas" name="judul-tugas" required>
+
+            <label for="tenggat-waktu">Tenggat Waktu:</label>
+            <input type="datetime-local" id="tenggat-waktu" name="tenggat-waktu" required>
+
+            <label for="prioritas">Prioritas:</label>
+            <select id="prioritas" name="prioritas">
+                <option value="Tinggi">Tinggi</option>
+                <option value="Sedang">Sedang</option>
+                <option value="Rendah">Rendah</option>
+            </select>
+
+            <button type="button" onclick="addTask()">Simpan Tugas</button>
+        </form>
+
+        <div id="alarm-control">
+            <p id="alarm-message"></p>
+            <button onclick="stopAlarm()">Matikan Alarm</button>
+        </div>
+
+        <div id="history" style="display: none;">
+            <h2>Riwayat</h2>
+            <div>
+                <h3>Jadwal</h3>
+                <ul id="schedule-history"></ul>
+            </div>
+            <div>
+                <h3>Tugas</h3>
+                <ul id="task-history"></ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const schedules = JSON.parse(localStorage.getItem('schedules')) || [];
+        const tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let alarmAudio;
+
+        function saveData() {
+            localStorage.setItem('schedules', JSON.stringify(schedules));
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            displayHistory();
+        }
+
+        function displayHistory() {
+            const scheduleHistory = document.getElementById('schedule-history');
+            const taskHistory = document.getElementById('task-history');
+
+            scheduleHistory.innerHTML = '';
+            taskHistory.innerHTML = '';
+
+            schedules.forEach((schedule, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${schedule.tanggal} - ${schedule.waktu} - ${schedule.deskripsi}`;
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Hapus';
+                deleteButton.onclick = () => removeSchedule(index);
+                li.appendChild(deleteButton);
+                scheduleHistory.appendChild(li);
+            });
+
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${task.judulTugas} - ${new Date(task.tenggatWaktu).toLocaleString()} - Prioritas: ${task.prioritas}`;
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Hapus';
+                deleteButton.onclick = () => removeTask(index);
+                li.appendChild(deleteButton);
+                taskHistory.appendChild(li);
+            });
+        }
+
+        function removeSchedule(index) {
+            schedules.splice(index, 1);
+            saveData();
+        }
+
+        function removeTask(index) {
+            tasks.splice(index, 1);
+            saveData();
+        }
+
+        function registerUser() {
+            alert('Registrasi berhasil!');
+            document.getElementById('registration-form').style.display = 'none';
+            document.getElementById('login-form').style.display = 'block';
+        }
+
+        function loginUser() {
+            alert('Login berhasil!');
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'block';
+            document.getElementById('history').style.display = 'block'; // Show history after login
+        }
+
+        function showAddScheduleForm() {
+            document.getElementById('add-schedule-form').style.display = 'block';
+            document.getElementById('add-task-form').style.display = 'none';
+        }
+
+        function showAddTaskForm() {
+            document.getElementById('add-schedule-form').style.display = 'none';
+            document.getElementById('add-task-form').style.display = 'block';
+        }
+
+        function addSchedule() {
+            const tanggal = document.getElementById('tanggal').value;
+            const waktu = document.getElementById('waktu').value;
+            const deskripsi = document.getElementById('deskripsi').value;
+
+            schedules.push({ tanggal, waktu, deskripsi });
+            saveData();
+            alert('Jadwal berhasil ditambahkan!');
+            setAlarm(tanggal, waktu, deskripsi);
+            document.getElementById('add-schedule-form').reset();
+            document.getElementById('add-schedule-form').style.display = 'none';
+        }
+
+        function addTask() {
+            const judulTugas = document.getElementById('judul-tugas').value;
+            const tenggatWaktu = document.getElementById('tenggat-waktu').value;
+            const prioritas = document.getElementById('prioritas').value;
+
+            tasks.push({ judulTugas, tenggatWaktu, prioritas });
+            saveData();
+            alert('Tugas berhasil ditambahkan!');
+            setAlarm(tenggatWaktu, `Tugas: ${judulTugas}`);
+            document.getElementById('add-task-form').reset();
+            document.getElementById('add-task-form').style.display = 'none';
+        }
+
+        function setAlarm(date, message) {
+            const alarmTime = new Date(date).getTime(); 
+            const now = new Date().getTime();
+            const timeToAlarm = alarmTime - now;
+
+            if (timeToAlarm > 0) {
+                setTimeout(() => {
+                    alarmAudio = new Audio('alarm.mp3');
+                    alarmAudio.play();
+                    document.getElementById('alarm-message').textContent = `Alarm: ${message}`;
+                    document.getElementById('alarm-control').style.display = 'block';
+                }, timeToAlarm);
+            } else {
+                alert("Waktu alarm sudah berlalu. Silakan atur jadwal yang valid.");
+            }
+        }
+
+        function stopAlarm() {
+            if (alarmAudio) {
+                alarmAudio.pause();
+                alarmAudio.currentTime = 0;
+            }
+            document.getElementById('alarm-control').style.display = 'none';
+        }
+
+        // Display history only after login
+        displayHistory();
+    </script>
+</body>
+</html>
